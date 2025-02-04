@@ -1,6 +1,5 @@
 #include <TM1637.h>
 #include <WiFi.h>
-#include <ESPAsyncWebServer.h>
 
 #define CLK 4                // TM1637 Clock 
 #define DIO 5                // TM1637 Data 
@@ -19,7 +18,6 @@ TaskHandle_t ButtonTaskHandle = NULL;
 TaskHandle_t WebServerTaskHandle = NULL;
 
 TM1637 display(CLK, DIO);
-AsyncWebServer server(80);
 
 // Global Variables
 int gameTimer = 80;            // Timer for the bomb defusal
@@ -79,7 +77,7 @@ void loop() {
 //start the fake timer 
 void TimerTask(void *parameter) {
   for (int i = 10; i > 0; i--) {
-    display.showNumberDec(i, false); 
+    //display.showNumberDec(i, false); 
     delay(1000);
   }
 
@@ -90,7 +88,7 @@ void TimerTask(void *parameter) {
     
     if (digitalRead(34) == LOW) { 
  a= true;
-      if((digitalRead(36 == LOW) && (a)){
+      if((digitalRead(36 == LOW) && (a))){
 
         
       gameInProgress = true;
@@ -101,7 +99,7 @@ void TimerTask(void *parameter) {
   }
 
   while (gameInProgress && gameTimer > 0) {
-    display.showNumberDec(gameTimer, false); 
+   // display.showNumberDec(gameTimer, false); 
     delay(1000);  // Wait for 1 second
     gameTimer--;
   }
