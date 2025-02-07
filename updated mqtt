@@ -19,8 +19,10 @@
 // WiFi & MQTT Setup
 const char *ssid = "real";            // Change to your WiFi SSID
 const char *password = "suman saha";  // Change to your WiFi password
-#define AIO_USERNAME "cirsuman"
-#define AIO_KEY "aio_LqMt04747vwruj0g49TMsQoZpj2N"
+#define WIFI_SSID "real"
+#define WIFI_PASS "suman saha"
+#define IO_USERNAME "cirsuman"
+#define IO_KEY "aio_LqMt04747vwruj0g49TMsQoZpj2N"
 
 
 WiFiClient client;
@@ -231,7 +233,7 @@ void setup() {
   }
   Serial.println("Connected to WiFi");
   Serial.println(WiFi.localIP().toString(false));
-  //reconnectMQTT();
+  reconnectMQTT();
 
   xTaskCreatePinnedToCore(Task1, "Level 1", 10000, NULL, 1, &Task1Handle, 0);
   xTaskCreatePinnedToCore(Task2, "Level 2", 10000, NULL, 1, &Task2Handle, 1);
@@ -261,18 +263,25 @@ void loop() {
   }
 }
 void reconnectMQTT() {
-  while (!mqtt.connected()) {
-    Serial.print("Attempting MQTT connection...");
+  while(io.status() < AIO_CONNECTED) 
+  {
+    Serial.print("...Attempting AdafruitIO Connection");
+    delay(1000);
+  }
+  Serial.println("Connected to Adafruit");
 
-    if (mqtt.connect()) {
-      Serial.println("Connected to MQTT Broker");
+  // while (!mqtt.connected()) {
+  //   Serial.print("Attempting MQTT connection...");
 
-      // mqtt.subscribe("bomb_diffusal_game/level");
-    } else {
-      Serial.print("Failed, rc=");
-      Serial.print(mqtt.connected() ? "Connected" : "Not Connected");
-      delay(5000);  // Retry after 5 seconds
-    }
+  //   if (mqtt.connect()) {
+  //     Serial.println("Connected to MQTT Broker");
+
+  //     // mqtt.subscribe("bomb_diffusal_game/level");
+  //   } else {
+  //     Serial.print("Failed, rc=");
+  //     Serial.print(mqtt.connected() ? "Connected" : "Not Connected");
+  //     delay(5000);  // Retry after 5 seconds
+  //   }
   }
 }
 
