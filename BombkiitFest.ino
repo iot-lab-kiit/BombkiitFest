@@ -5,21 +5,12 @@
 #include "Adafruit_MQTT_Client.h"
 #include <Bonezegei_HCSR04.h>
 
-// #include "Task_1.cpp"
-// #include "Task_2.h"
-// #include "Task_3.h"
-// #include "Task_4.h"
-// #include "Task_5.h"
-// #include "Task_6.h"
-// #include "Task_7.h"
-// #include "Task_8.h"
-
 
 
 
 // WiFi & MQTT Setup
-const char* ssid = "real";  // Change to your WiFi SSID
-const char* password = "suman saha";  // Change to your WiFi password
+const char* ssid = "IOT_DEVICES";  // Change to your WiFi SSID
+const char* password = "iot_lab_devices";  // Change to your WiFi password
 #define AIO_SERVER      "io.adafruit.com"
 #define AIO_SERVERPORT  1883
 #define AIO_USERNAME  "cirsuman"
@@ -222,40 +213,33 @@ void setup() {
     lcd.backlight();
     levelDisplay.initDisplay();
 
-     pinMode(GPIO1, INPUT_PULLUP);
-    pinMode(GPIO2, INPUT_PULLUP);
+     
     
-    WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(1000);
-        Serial.println("Connecting to WiFi...");
-    }
-    Serial.println("Connected to WiFi");
-    Serial.println(WiFi.localIP().toString(false));
-    reconnectMQTT();
+    // WiFi.begin(ssid, password);
+    // while (WiFi.status() != WL_CONNECTED) {
+    //     delay(1000);
+    //     Serial.println("Connecting to WiFi...");
+    // }
+    // Serial.println("Connected to WiFi");
+    // Serial.println(WiFi.localIP());
+    //reconnectMQTT();
   
     xTaskCreatePinnedToCore(Task1, "Level 1", 10000, NULL, 1, &Task1Handle, 0);
-    xTaskCreatePinnedToCore(Task2, "Level 2", 10000, NULL, 1, &Task2Handle, 1);
-    xTaskCreatePinnedToCore(Task3, "Level 3", 10000, NULL, 1, &Task3Handle, 0);
-    xTaskCreatePinnedToCore(Task4, "Level 4", 10000, NULL, 1, &Task4Handle, 1);
-    xTaskCreatePinnedToCore(Task5, "Level 5", 10000, NULL, 1, &Task5Handle, 0);
-    xTaskCreatePinnedToCore(Task6, "Level 6", 10000, NULL, 1, &Task6Handle, 1);
-    xTaskCreatePinnedToCore(Task7, "Level 7", 10000, NULL, 1, &Task7Handle, 0);
-    xTaskCreatePinnedToCore(Task8, "Level 8", 10000, NULL, 1, &Task8Handle, 1);
+    
 }
 
 void loop() {
- if (!client.connected()) {
-        reconnectMQTT();
-    }
+//  if (!client.connected()) {
+//         reconnectMQTT();
+//     }
     //mqtt.loop();
     levelDisplay.updateTimer();
     levelDisplay.updateBlinkingDot();
 
     if (levelDisplay.isGameOver()) {
         Serial.println("Game Over!");        
-        delay(2000);  
-        ESP.restart(); 
+        //delay(2000);  
+        //ESP.restart(); 
 
     delay(100);
    }
@@ -311,7 +295,9 @@ void sendMQTTMessage(int levelNumber, int remainingTime) {
 
 ////////////////////////////////////////////
 void Task1(void *pvParameters) {
-   
+  Serial.println("Entered task 1");
+   pinMode(GPIO1, INPUT_PULLUP);
+    pinMode(GPIO2, INPUT_PULLUP);
 
     unsigned long timerStart = millis();
     bool levelCompleted = false;
@@ -330,14 +316,17 @@ void Task1(void *pvParameters) {
             noTone(BUZZ);  
         }
 
-        delay(100);  
-    }
+vTaskDelay(100 / portTICK_PERIOD_MS);    }
+xTaskCreatePinnedToCore(Task2, "Level 2", 10000, NULL, 1, &Task2Handle, 1);
+   
 
     vTaskDelete(NULL);  
 }
 
 ////////////////////////////////////////////////////
 void Task2(void *pvParameters) {
+    Serial.println("Entered task 2");
+
     pinMode(LDR_PIN, INPUT);  
     int distance;
     bool levelCompleted = false;
@@ -382,8 +371,9 @@ void Task2(void *pvParameters) {
         }
     }
 
-        delay(100);  
-    }
+vTaskDelay(100 / portTICK_PERIOD_MS);    }
+ xTaskCreatePinnedToCore(Task3, "Level 3", 10000, NULL, 1, &Task3Handle, 0);
+  
 
     vTaskDelete(NULL); 
 }
@@ -392,6 +382,8 @@ void Task2(void *pvParameters) {
 
 
 void Task3(void *pvParameters) {
+    Serial.println("Entered task 3");
+
     pinMode(MIC_PIN, INPUT);
     int clapCount = 0;
     bool levelCompleted = false;
@@ -407,15 +399,17 @@ void Task3(void *pvParameters) {
                 sendMQTTMessage((int)3, remainingSeconds);
             }
         }
-        delay(100);
-    }
-
+vTaskDelay(100 / portTICK_PERIOD_MS);    }
+  xTaskCreatePinnedToCore(Task4, "Level 4", 10000, NULL, 1, &Task4Handle, 1);
+  
     vTaskDelete(NULL);
 } 
 
 /////////////////////////////////////////////////////////////
 
 void Task4(void *pvParameters) {
+    Serial.println("Entered task 4");
+
     pinMode(TILT_PIN, INPUT);
     int tiltValue;
     bool levelCompleted = false;
@@ -429,8 +423,9 @@ void Task4(void *pvParameters) {
             sendMQTTMessage((int)4, remainingSeconds);
         }
 
-        delay(100); 
-    }
+vTaskDelay(100 / portTICK_PERIOD_MS);    }
+  xTaskCreatePinnedToCore(Task5, "Level 5", 10000, NULL, 1, &Task5Handle, 0);
+   
 
     vTaskDelete(NULL);
 }
@@ -438,6 +433,8 @@ void Task4(void *pvParameters) {
 
 
 void Task5(void *pvParameters) {
+    Serial.println("Entered task 5");
+
     pinMode(REED_PIN, INPUT_PULLUP);
     bool levelCompleted = false;
 
@@ -450,42 +447,53 @@ void Task5(void *pvParameters) {
 
         delay(100);  
     }
-
+ xTaskCreatePinnedToCore(Task6, "Level 6", 10000, NULL, 1, &Task6Handle, 1);
+   
     vTaskDelete(NULL);
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-float temperature; 
+// float temperature; 
 
 void Task6(void *pvParameters) {
-    pinMode(NTC_PIN, INPUT);
+    Serial.println("Entered task 6");
+
+    pinMode(NTC_PIN, INPUT);  // Configure the heat sensor pin as input
     bool levelCompleted = false;
 
     while (remainingSeconds > 0 && !levelCompleted) {
-        int sensorValue = analogRead(NTC_PIN);
-        temperature = (float)sensorValue * (3.3 / 4095.0);  // Convert analog reading to voltage
-        temperature = (1 / (log(1 / (3.3 / temperature - 1)) / 3950 + 1 / 298.15) - 273.15);  // Convert to Celsius
+        // Read the state of the heat sensor (HIGH if heat is detected, LOW otherwise)
+        int sensorState = digitalRead(NTC_PIN);  
 
-        if (temperature >= 30.0) {  
-            levelCompleted = true;
-            levelDisplay.updateLevel(6);
-            sendMQTTMessage((int)6, remainingSeconds);
+        if (sensorState == HIGH) {  // If the sensor detects heat (digital HIGH)
+            Serial.println("Heat detected!");
+
+            levelCompleted = true;  // Mark the level as completed
+            levelDisplay.updateLevel(6);  // Update the level display
+            sendMQTTMessage(6, remainingSeconds);  // Send MQTT message with level information
         }
 
-        delay(500);  
+        vTaskDelay(100 / portTICK_PERIOD_MS);  // Delay to prevent excessive CPU usage
     }
 
-    vTaskDelete(NULL);
+    // After completing Task6, move on to Task8
+
+    vTaskDelete(NULL);  // Delete the task when finished
 }
+
 
 /////////////////////////////////////////////
 #include <ESPAsyncWebServer.h>
 
+    //Serial.println("Entered task 7");
+float temperature; 
 
 AsyncWebServer server(80);
 
 void Task7(void *pvParameters) {
+    Serial.println("Entered task 7");
+
     pinMode(BUTTON_PIN, INPUT_PULLUP);
     bool levelCompleted = false;
 
@@ -510,14 +518,15 @@ void Task7(void *pvParameters) {
             levelDisplay.updateLevel(7);
             sendMQTTMessage((int)7, remainingSeconds);
         }
-        delay(100);
-  }
+vTaskDelay(100 / portTICK_PERIOD_MS);  }
 
     vTaskDelete(NULL);
 }
 
 //////////////////////////////////////////////////////////
 void Task8(void *pvParameters) {
+    Serial.println("Entered task 8");
+
     pinMode(WIRE_PIN, INPUT_PULLUP);  
     bool levelCompleted = false;
     unsigned long previousMillis = 0;
@@ -536,7 +545,7 @@ void Task8(void *pvParameters) {
                 levelDisplay.displayGameResult(); 
             }
         }
-    }
+    }vTaskDelay(100 / portTICK_PERIOD_MS);
 
     vTaskDelete(NULL);  
 }
