@@ -11,8 +11,8 @@
 #include <math.h>
 
 // WiFi & MQTT Setup
-const char* ssid = "IOT_DEVICES";
-const char* password = "iot_lab_devices";
+const char *ssid = "IOT_DEVICES";
+const char *password = "iot_lab_devices";
 #define AIO_SERVER "io.adafruit.com"
 #define AIO_SERVERPORT 1883
 #define AIO_USERNAME "cirsuman"
@@ -34,9 +34,9 @@ int thresholdDistance = 6;
 
 //////////////////
 // pins
-#define BUZZ 27 // BUZZER CON
-#define LED_WIN 2 // pin to indicate win
-#define LED_STAT 4 // pin to indicate 
+#define BUZZ 27    // BUZZER CON
+#define LED_WIN 2  // pin to indicate win  GREEN
+#define LED_STAT 4 // pin to indicate  RED
 
 #define GPIO1 12 // need to connect to gnd to start the game
 #define GPIO2 13 // need to connect to gnd to start the game
@@ -86,8 +86,8 @@ void beep(int times)
     for (int i = 0; i < times; i++)
     {
         tone(BUZZ, 800, 300);
-         vTaskDelay(1000 / portTICK_PERIOD_MS);
-        //delay(1000);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        // delay(1000);
     }
 }
 
@@ -98,133 +98,136 @@ public:
     uint8_t completedLevels = 0;
 
     LevelDisplay() {}
-…    }
+    …
+}
 
-    void displayHeader()
+void
+displayHeader()
+{
+    lcd.setCursor(0, 0);
+    lcd.print("LEVEL - ");
+    lcd.print(currentLevel);
+    lcd.setCursor(11, 0);
+    displayTimer();
+}
+
+void updateBlinkingDot()
+{
+    unsigned long currentTime = millis();
+    if (currentTime - lastBlinkTime >= 500)
     {
-        lcd.setCursor(0, 0);
-        lcd.print("LEVEL - ");
-        lcd.print(currentLevel);
-        lcd.setCursor(11, 0);
-        displayTimer();
-    }
-
-    void updateBlinkingDot()
-    {
-        unsigned long currentTime = millis();
-        if (currentTime - lastBlinkTime >= 500)
-        {
-            dotBlinkState = !dotBlinkState;
-            lastBlinkTime = currentTime;
-            displayDots();
-        }
-    }
-
-    void displayTimer()
-    {
-        int minutes = remainingSeconds / 60;
-        int seconds = remainingSeconds % 60;
-        lcd.setCursor(11, 0);
-        if (minutes < 10)
-            lcd.print("0");
-        lcd.print(minutes);
-        lcd.print(":");
-        if (seconds < 10)
-            lcd.print("0");
-        lcd.print(seconds);
-    }
-
-    uint8_t levelCompletion[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-
-    void updateLevel(uint8_t levelNumber)
-    {
-        if (levelNumber >= 1 && levelNumber <= 8)
-        {
-            uint8_t index = levelNumber - 1;
-
-            if (levelCompletion[index] == 0)
-            {
-                levelCompletion[index] = 1;
-                currentLevel = levelNumber + 1;
-
-                if (currentLevel > 8)
-                {
-                    gameOver = true;
-                    displayGameResult();
-                    return;
-                }
-            }
-        }
-
-        lcd.clear();
-        displayHeader();
+        dotBlinkState = !dotBlinkState;
+        lastBlinkTime = currentTime;
         displayDots();
     }
+}
 
-    void displayDots()
+void displayTimer()
+{
+    int minutes = remainingSeconds / 60;
+    int seconds = remainingSeconds % 60;
+    lcd.setCursor(11, 0);
+    if (minutes < 10)
+        lcd.print("0");
+    lcd.print(minutes);
+    lcd.print(":");
+    if (seconds < 10)
+        lcd.print("0");
+    lcd.print(seconds);
+}
+
+uint8_t levelCompletion[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+void updateLevel(uint8_t levelNumber)
+{
+    if (levelNumber >= 1 && levelNumber <= 8)
     {
-        lcd.setCursor(8, 1);
-        for (uint8_t i = 0; i < 8; i++)
+        uint8_t index = levelNumber - 1;
+
+        if (levelCompletion[index] == 0)
         {
-            if (levelCompletion[i] == 1)
-            {
-                lcd.write(0);
-            }
-            else if (i == currentLevel - 1)
-            {
-                lcd.write(dotBlinkState ? 0 : 32);
-            }
-            else
-            {
-                lcd.write(32); // unachieved goal
-            }
-        }
-    }
+            levelCompletion[index] = 1;
+            currentLevel = levelNumber + 1;
 
-    void updateTimer()
-    {
-        unsigned long currentTime = millis();
-
-        if (currentTime - lastSecondUpdate >= 1000)
-        {
-            remainingSeconds--;
-            displayTimer();
-            lastSecondUpdate = currentTime;
-
-            if (remainingSeconds <= 0)
+            if (currentLevel > 8)
             {
                 gameOver = true;
                 displayGameResult();
+                return;
             }
         }
     }
 
-    void displayGameResult()
+    lcd.clear();
+    displayHeader();
+    displayDots();
+}
+
+void displayDots()
+{
+    lcd.setCursor(8, 1);
+    for (uint8_t i = 0; i < 8; i++)
     {
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        if (completedLevels == 8)
+        if (levelCompletion[i] == 1)
         {
-            lcd.print("CONGO!");
-            lcd.setCursor(0, 1);
-            lcd.print("YOU WON!");
-            digitalWrite(LED_WIN,HIGH);
+            lcd.write(0);
+        }
+        else if (i == currentLevel - 1)
+        {
+            lcd.write(dotBlinkState ? 0 : 32);
         }
         else
         {
-            lcd.print("GAME OVER!");
-            lcd.setCursor(0, 1);
-            lcd.print("Levels: ");
-            lcd.print(completedLevels);
-            lcd.print("/8");
-             }
+            lcd.write(32); // unachieved goal
+        }
     }
+}
 
-    bool isGameOver()
+void updateTimer()
+{
+    unsigned long currentTime = millis();
+
+    if (currentTime - lastSecondUpdate >= 1000)
     {
-        return gameOver;
+        remainingSeconds--;
+        displayTimer();
+        lastSecondUpdate = currentTime;
+
+        if (remainingSeconds <= 0)
+        {
+            gameOver = true;
+            displayGameResult();
+        }
     }
-};
+}
+
+void displayGameResult()
+{
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    if (completedLevels == 8)
+    {
+        lcd.print("CONGO!");
+        lcd.setCursor(0, 1);
+        lcd.print("YOU WON!");
+        digitalWrite(LED_WIN, HIGH);
+    }
+    else
+    {
+        lcd.print("GAME OVER!");
+        lcd.setCursor(0, 1);
+        lcd.print("Levels: ");
+        lcd.print(completedLevels);
+        lcd.print("/8");
+    }
+}
+
+bool isGameOver()
+{
+    return gameOver;
+}
+}
+;
 
 LevelDisplay levelDisplay;
 
@@ -234,13 +237,14 @@ void setup()
     lcd.begin();
     lcd.backlight();
     levelDisplay.initDisplay();
-    pinMode(LED_WIN,OUTPUT);
-    pinMode(LED_STAT,OUTPUT);
-    digitalWrite(LED_WIN,LOW);
-    digitalWrite(LED_STAT,HIGH);
+    pinMode(LED_WIN, OUTPUT);
+    pinMode(LED_STAT, OUTPUT);
+    digitalWrite(LED_WIN, LOW);
+    digitalWrite(LED_STAT, HIGH);
 
-     WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED) {
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED)
+    {
         delay(500);
         Serial.print(".");
     }
@@ -376,58 +380,57 @@ void Task1(void *pvParameters)
 ////////////////////////////////////////////////////
 void Task2(void *pvParameters)
 {
-  Serial.println("Entered task 2");
-  beep(2);
-  int distance;
-  bool levelCompleted = false;
-  unsigned long distanceStartTime = 0;
-  bool targetDistanceReached = false;
+    Serial.println("Entered task 2");
+    beep(2);
+    int distance;
+    bool levelCompleted = false;
+    unsigned long distanceStartTime = 0;
+    bool targetDistanceReached = false;
 
-  while (remainingSeconds > 0 && !levelCompleted)
-  {
-
-    distance = ultrasonic.getDistance();
-    lcd.setCursor(0, 1);
-    lcd.print("Dis=");
-    lcd.setCursor(5, 1);
-    lcd.print(distance);
-
-    Serial.print("Distance: ");
-    Serial.print(distance);
-    Serial.println(" cm");
-
-    unsigned long currentMillis = millis();
-
-    if (distance == thresholdDistance)
+    while (remainingSeconds > 0 && !levelCompleted)
     {
-      if (!targetDistanceReached)
-      {
-        distanceStartTime = currentMillis;
-        targetDistanceReached = true;
-        Serial.println("Distance REACHED");
-      }
 
-      if (targetDistanceReached && currentMillis - distanceStartTime >= 5000) // 10 seconds
-      {
-        Serial.println("Distance met for 10 seconds!");
-        levelCompleted = true;
-        levelDisplay.updateLevel(2);
-        // sendMQTTMessage(1,2, remainingSeconds);
-      }
+        distance = ultrasonic.getDistance();
+        lcd.setCursor(0, 1);
+        lcd.print("Dis=");
+        lcd.setCursor(5, 1);
+        lcd.print(distance);
+
+        Serial.print("Distance: ");
+        Serial.print(distance);
+        Serial.println(" cm");
+
+        unsigned long currentMillis = millis();
+
+        if (distance == thresholdDistance)
+        {
+            if (!targetDistanceReached)
+            {
+                distanceStartTime = currentMillis;
+                targetDistanceReached = true;
+                Serial.println("Distance REACHED");
+            }
+
+            if (targetDistanceReached && currentMillis - distanceStartTime >= 5000) // 10 seconds
+            {
+                Serial.println("Distance met for 10 seconds!");
+                levelCompleted = true;
+                levelDisplay.updateLevel(2);
+                // sendMQTTMessage(1,2, remainingSeconds);
+            }
+        }
+        else
+        {
+            targetDistanceReached = false;
+            Serial.println("Distance NOT Met");
+        }
+
+        vTaskDelay(100 / portTICK_PERIOD_MS);
     }
-    else
-    {
-      targetDistanceReached = false;
-      Serial.println("Distance NOT Met");
-    }
+    xTaskCreatePinnedToCore(Task3, "Level 3", 10000, NULL, 1, &Task3Handle, 0);
 
-    vTaskDelay(100 / portTICK_PERIOD_MS);
-  }
-  xTaskCreatePinnedToCore(Task3, "Level 3", 10000, NULL, 1, &Task3Handle, 0);
-
-  vTaskDelete(NULL);
+    vTaskDelete(NULL);
 }
-
 
 ///////////////////////////////////////////////////////////
 
@@ -469,11 +472,13 @@ void Task4(void *pvParameters)
     pinMode(TILT_PIN, INPUT_PULLUP);
     bool levelCompleted = false;
 
-    while (remainingSeconds > 0 && !levelCompleted) {
-        if (digitalRead(TILT_PIN) == LOW) {  // Reed switch activated (magnet nearby)
+    while (remainingSeconds > 0 && !levelCompleted)
+    {
+        if (digitalRead(TILT_PIN) == LOW)
+        { // Reed switch activated (magnet nearby)
             levelCompleted = true;
             levelDisplay.updateLevel(true);
-            //sendMQTTMessage("Level 4 completed", remainingSeconds);
+            // sendMQTTMessage("Level 4 completed", remainingSeconds);
         }
 
         vTaskDelay(100 / portTICK_PERIOD_MS);
@@ -523,19 +528,21 @@ void Task6(void *pvParameters)
 
         Serial.print("Current value: ");
         Serial.println(Vntc);
-        if(Vntc > 8.50){
-        lcd.setCursor(0, 1);
-        lcd.print("cold");
+        if (Vntc > 8.50)
+        {
+            lcd.setCursor(0, 1);
+            lcd.print("cold");
         }
 
         if (Vntc < 8.50)
-        {        lcd.setCursor(0, 1);
-                      lcd.print("Hot");
+        {
+            lcd.setCursor(0, 1);
+            lcd.print("Hot");
             Serial.println("Heat detected!");
             levelCompleted = true;
             levelDisplay.updateLevel(6);
-             lcd.setCursor(0, 1);
-             lcd.print(" ");
+            lcd.setCursor(0, 1);
+            lcd.print(" ");
 
             // sendMQTTMessage(1,6, remainingSeconds);
         }
@@ -549,16 +556,25 @@ void Task6(void *pvParameters)
 
 /////////////////////////////////////////////
 
-void Task7(void *pvParameters) {
+void Task7(void *pvParameters)
+{
     Serial.println("Entered task 7");
-    
-      setupServer();
+    beep(7);
+    setupServer();
 
-   
-        // Your task loop logic here
+    while (remainingSeconds > 0 && !levelCompleted)
+    {
+        if (isSolved == 1) // declared in web.h
+        {
+            levelCompleted = true;
+            levelDisplay.updateLevel(7);
+            // sendMQTTMessage(1,(int)7, remainingSeconds);
+        }
+
         vTaskDelay(100 / portTICK_PERIOD_MS);
-    
-        xTaskCreatePinnedToCore(Task8, "Level 8", 10000, NULL, 1, &Task8Handle, 1);
+    }
+
+    xTaskCreatePinnedToCore(Task8, "Level 8", 10000, NULL, 1, &Task8Handle, 1);
 
     vTaskDelete(NULL);
 }
@@ -585,9 +601,9 @@ void Task8(void *pvParameters)
             {
                 levelCompleted = true;
                 levelDisplay.updateLevel(8);
-                digitalWrite(LED_STAT,LOW);
-                digitalWrite(LED_WIN,HIGH);
-                                // sendMQTTMessage(1,8, remainingSeconds);
+                digitalWrite(LED_STAT, LOW);
+                digitalWrite(LED_WIN, HIGH);
+                // sendMQTTMessage(1,8, remainingSeconds);
                 levelDisplay.displayGameResult();
             }
         }
