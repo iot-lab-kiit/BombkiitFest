@@ -1,27 +1,29 @@
 #include <WiFi.h>
-
 #include "web.h"
 #include <LCD_I2C.h>
 #include <Wire.h>
 #include "Adafruit_MQTT.h"
 #include "Adafruit_MQTT_Client.h"
 #include <Bonezegei_HCSR04.h>
-// #include <ArduinoJson.h>
-//  #include <PubSubClient.h>
+#include <ArduinoJson.h>
+#include <PubSubClient.h>
 #include <math.h>
 
 // WiFi & MQTT Setup
 const char *ssid = "IOT_DEVICES";
 const char *password = "iot_lab_devices";
-#define AIO_SERVER "io.adafruit.com"
-#define AIO_SERVERPORT 1883
-#define AIO_USERNAME "cirsuman"
-#define AIO_KEY "aio_LqMt04747vwruj0g49TMsQoZpj2N"
 
-String MQTT_CLIENT = "";
-// extern PubSubClient mqtt;
+////////////////////////////////////////////////////
+const char *mqttServer = "192.168.0.22";
+const int mqttPort = 1883;
+const char *mqttUser = "guest";
+const char *mqttPassword = "guest";
 
-WiFiClient client;
+#define MQTT_TOPIC  "bomb_data"
+////////////////////////////////////////////////
+
+WiFiClient espClient;
+PubSubClient client(espClient);
 
 byte dotBlink[8]{0b11111, 0b11111, 0b11111, 0b11111, 0b11111, 0b11111, 0b11111, 0b11111};
 
@@ -51,9 +53,9 @@ int thresholdDistance = 6;
 
 #define MIC_PIN 25 // Microphone
 
-#define TILT_PIN 35 // Tilt sensor
+#define TILT_PIN 35 // Tilt sensor connected to gnd
 
-#define REED_PIN 23 // Reed switch
+#define REED_PIN 23 // Reed switch connected to gnd
 
 #define NTC_PIN 26 // NTC thermistor
 
@@ -64,6 +66,7 @@ int thresholdDistance = 6;
 Bonezegei_HCSR04 ultrasonic(TRIG_PIN, ECHO_PIN);
 
 ////////////////////////
+TaskHandle_t Task0Handle = NULL;
 
 TaskHandle_t Task1Handle = NULL;
 TaskHandle_t Task2Handle = NULL;
@@ -79,10 +82,9 @@ unsigned long lastSecondUpdate = 0;
 extern int remainingSeconds = 600;
 bool gameOver = false;
 
-// void sendMQTTMessage(int levelNumber, int remainingTime);
+void sendMQTTMessage(int bombno, int levelNumber, int remainingTime);
 
-void beep(int times)
-{
+void beep(int times){
     for (int i = 0; i < times; i++)
     {
         tone(BUZZ, 800, 300);
@@ -91,18 +93,25 @@ void beep(int times)
     }
 }
 
-class LevelDisplay
-{
+class LevelDisplay{
 public:
     uint8_t currentLevel = 1;
     uint8_t completedLevels = 0;
 
     LevelDisplay() {}
-    …
-}
+    
+void initDisplay()
+    {
+        lcd.createChar(0, dotBlink);
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("BOMB ONE ");
+        delay(2000);
+        displayHeader();
+        displayDots();
+    }
 
-void
-displayHeader()
+void displayHeader()
 {
     lcd.setCursor(0, 0);
     lcd.print("LEVEL - ");
@@ -226,8 +235,7 @@ bool isGameOver()
 {
     return gameOver;
 }
-}
-;
+};
 
 LevelDisplay levelDisplay;
 
@@ -252,17 +260,35 @@ void setup()
     Serial.println("WiFi connected");
     Serial.println("IP address: ");
     Serial.println(WiFi.localIP());
-    // reconnectMQTT();
+    client.setServer(mqttServer, mqttPort);
+    client.setCallback(callback);
+
+    while (!client.connected())
+    {
+        Serial.println("Connecting to MQTT...");
+
+        if (client.connect("ESP32Client", mqttUser, mqttPassword))
+        {
+
+            Serial.println("connected");
+        }
+        else
+        {
+
+            Serial.print("failed with state ");
+            Serial.print(client.state());
+            delay(2000);
+        }
+    }
+    client.subscribe(MQTT_TOPIC);
+   xTaskCreatePinnedToCore(Task0, "MQTTLOOP", 10000, NULL, 1, &Task0Handle, 0);
+
 
     xTaskCreatePinnedToCore(Task1, "Level 1", 10000, NULL, 1, &Task1Handle, 0);
 }
 
 void loop()
 {
-    //  if (!client.connected()) {
-    //         reconnectMQTT();
-    //     }
-    // mqtt.loop();
     levelDisplay.updateTimer();
     levelDisplay.updateBlinkingDot();
 
@@ -292,58 +318,69 @@ void loop()
 //     }
 // }
 
-// void mqttCallback(char* topic, byte* payload, unsigned int length) {
-//     Serial.print("Message arrived on topic: ");
-//     Serial.print(topic);
-//     Serial.print(" with message: ");
+void callback(char* topic, byte* payload, unsigned int length) {
+     Serial.print("Message arrived on topic: ");
+     Serial.print(topic);
+     Serial.print(" with message: ");
 
-//     StaticJsonDocument<256> doc;
-//     DeserializationError error = deserializeJson(doc, payload, length);
+    StaticJsonDocument<256> doc;
+    DeserializationError error = deserializeJson(doc, payload, length);
 
-//     if (error) {
-//         Serial.print("deserializeJson() failed: ");
-//         Serial.println(error.c_str());
-//         return;
-//     }
+    if (error) {
+        Serial.print("deserializeJson() failed: ");
+        Serial.println(error.c_str());
+        return;
+    }
 
-//     if (doc.containsKey("level") && doc.containsKey("time") && doc.containsKey("extra")) {
-//         int level = doc["level"];
-//         int time = doc["time"];
-//         int extra = doc["extra"];
+    if (doc.containsKey("level") && doc.containsKey("time") && doc.containsKey("bombno")) {
+        int bombno = doc["bombno"];
+        int level = doc["level"];
+        int time = doc["time"];
 
-//         Serial.print("Level: ");
-//         Serial.println(level);
-//         Serial.print("Time: ");
-//         Serial.println(time);
-//         Serial.print("Extra: ");
-//         Serial.println(extra);
-//     } else {
-//         Serial.println("Missing 'level', 'time', or 'extra' keys in JSON");
-//     }
-// }
+        Serial.print("bombno: ");
+        Serial.println(bombno);
+        Serial.print("Level: ");
+        Serial.println(level);
+        Serial.print("Time: ");
+        Serial.println(time);
 
-// void sendMQTTMessage(int bombno, int levelNumber, int remainingTime) {
-//     StaticJsonDocument<256> doc;
-//     doc["bombno"] = bombno;
-//     doc["level"] = levelNumber;
-//     doc["time"] = remainingTime;
+    } else {
+        Serial.println("Missing 'level', 'time', or 'extra' keys in JSON");
+    }
+}
 
-//     char message[128];
-//     serializeJson(doc, message, sizeof(message));
+void sendMQTTMessage(int bombno, int levelNumber, int remainingTime) {
+    StaticJsonDocument<256> doc;
+    doc["bombno"] = bombno;
+    doc["level"] = levelNumber;
+    doc["time"] = remainingTime;
 
-//     if (mqtt.connected()) {
-//         if (mqtt.publish("bomb_diffusal_game/level", message)) {
-//             Serial.print("Sent MQTT Message: ");
-//             Serial.println(message);
-//         } else {
-//             Serial.println("Failed to send MQTT message");
-//         }
-//     } else {
-//         Serial.println("MQTT not connected");
-//     }
-// }
+    char message[128];
+    serializeJson(doc, message, sizeof(message));
+
+    if (client.connected()) {
+        if (client.publish(MQTT_TOPIC, message)) {
+            Serial.print("Sent MQTT Message: ");
+            Serial.println(message);
+        } else {
+            Serial.println("Failed to send MQTT message");
+        }
+    } else {
+        Serial.println("MQTT not connected");
+    }
+}
 
 ////////////////////////////////////////////
+void Task0(void *pvParameters)
+{
+   while (1)
+    {
+          client.loop();
+
+    }
+
+
+}
 void Task1(void *pvParameters)
 {
     Serial.println("Entered task 1");
@@ -361,7 +398,7 @@ void Task1(void *pvParameters)
             remainingSeconds = 600;
             levelDisplay.updateLevel(1);
             levelCompleted = true;
-            // sendMQTTMessage(1,(int)1, remainingSeconds);
+             sendMQTTMessage(1,(int)1, remainingSeconds);
         }
 
         // if (millis() - timerStart > 2000 && millis() % 1000 < 500) {
@@ -416,7 +453,7 @@ void Task2(void *pvParameters)
                 Serial.println("Distance met for 10 seconds!");
                 levelCompleted = true;
                 levelDisplay.updateLevel(2);
-                // sendMQTTMessage(1,2, remainingSeconds);
+                 sendMQTTMessage(1,2, remainingSeconds);
             }
         }
         else
@@ -453,7 +490,7 @@ void Task3(void *pvParameters)
             {
                 levelCompleted = true;
                 levelDisplay.updateLevel(3);
-                // sendMQTTMessage(1,(int)3, remainingSeconds);
+                sendMQTTMessage(1,(int)3, remainingSeconds);
             }
         }
         vTaskDelay(100 / portTICK_PERIOD_MS);
@@ -478,7 +515,7 @@ void Task4(void *pvParameters)
         { // Reed switch activated (magnet nearby)
             levelCompleted = true;
             levelDisplay.updateLevel(true);
-            // sendMQTTMessage("Level 4 completed", remainingSeconds);
+            sendMQTTMessage(1,(int)4, remainingSeconds);
         }
 
         vTaskDelay(100 / portTICK_PERIOD_MS);
@@ -502,7 +539,7 @@ void Task5(void *pvParameters)
         {
             levelCompleted = true;
             levelDisplay.updateLevel(5);
-            // sendMQTTMessage(1,(int)5, remainingSeconds);
+             sendMQTTMessage(1,(int)5, remainingSeconds);
         }
 
         delay(100);
@@ -544,7 +581,7 @@ void Task6(void *pvParameters)
             lcd.setCursor(0, 1);
             lcd.print(" ");
 
-            // sendMQTTMessage(1,6, remainingSeconds);
+           sendMQTTMessage(1,6, remainingSeconds);
         }
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }
@@ -561,6 +598,8 @@ void Task7(void *pvParameters)
     Serial.println("Entered task 7");
     beep(7);
     setupServer();
+        bool levelCompleted = false;
+
 
     while (remainingSeconds > 0 && !levelCompleted)
     {
@@ -568,7 +607,7 @@ void Task7(void *pvParameters)
         {
             levelCompleted = true;
             levelDisplay.updateLevel(7);
-            // sendMQTTMessage(1,(int)7, remainingSeconds);
+            sendMQTTMessage(1,(int)7, remainingSeconds);
         }
 
         vTaskDelay(100 / portTICK_PERIOD_MS);
@@ -597,13 +636,13 @@ void Task8(void *pvParameters)
         {
             previousMillis = currentMillis;
 
-            if (digitalRead(WIRE_PIN) == LOW)
+            if (analogRead(WIRE_PIN) == 512)
             {
                 levelCompleted = true;
                 levelDisplay.updateLevel(8);
                 digitalWrite(LED_STAT, LOW);
                 digitalWrite(LED_WIN, HIGH);
-                // sendMQTTMessage(1,8, remainingSeconds);
+                sendMQTTMessage(1,8, remainingSeconds);
                 levelDisplay.displayGameResult();
             }
         }
