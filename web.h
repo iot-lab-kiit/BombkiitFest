@@ -176,7 +176,7 @@ const char script_js[] PROGMEM = R"rawliteral(const qrText = 'https://www.youtub
       document.addEventListener('touchend', handleTouchEnd);
 
       try {
-          imageURL = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQtexwZdQi92pIVJsxG0-6yTnSzSKS6wexQYQ&s";
+          imageURL = "https://i.postimg.cc/wjbYC3Ty/KIITFEST-8-0-LOGO.jpg";
           const image = await loadImage(imageURL);
           createPuzzle(image);
       } catch (error) {
