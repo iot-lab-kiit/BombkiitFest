@@ -19,12 +19,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
           <div id="puzzle-container"></div>
           <button id="shuffle-button">Shuffle</button>
           <div id="message"></div>
-          <div id="author">
-              <p>Created by SUMAN SAHA</p>
-              <p>GitHub: <a href="https://github.com/circuito-suman/PuzzleGame">https://github.com/circuito-suman/PuzzleGame</a></p>
-              <p>Share with others: <a href="https://circuito-suman.github.io/PuzzleGame/">https://circuito-suman.github.io/PuzzleGame/</a></p>
-
-          </div>
+         
       </div>
       <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
       <script src="script.js"></script>
@@ -35,101 +30,101 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 
 // CSS content
 const char styles_css[] PROGMEM = R"rawliteral(body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      background: teal url(https://assets.codepen.io/15664/bliss.jpg) center / cover no-repeat;
-      
-  }
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background: rgb(0, 0, 0) url(https://res.cloudinary.com/dos2waok4/image/upload/v1738064555/Artwork_without_Logo_jq8ya8_qwzhna.avif) center / cover no-repeat;
+    
+}
 
-  #container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-  }
+#container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
 
-  #puzzle-container {
-      display: grid;
-      grid-template-columns: repeat(3, 100px); /* Changed to 3 columns */
-      grid-template-rows: repeat(3, 100px);    /* Changed to 3 rows */
-      gap: 2px;
-      margin-bottom: 20px;
-      user-select: none;
-      position: relative;
-      width: 300px;
-      height: 300px;
-      border: 2px solid #0026ff;
-      box-shadow: 0 0 10px rgba(0, 0, 0);
+#puzzle-container {
+    display: grid;
+    grid-template-columns: repeat(3, 100px); /* Changed to 3 columns */
+    grid-template-rows: repeat(3, 100px);    /* Changed to 3 rows */
+    gap: 2px;
+    margin-bottom: 20px;
+    user-select: none;
+    position: relative;
+    width: 300px;
+    height: 300px;
+    border: 4px solid #030000;
+    box-shadow: 0 2 2px rgba(0, 0, 0);
 
-  }
+}
 
-  .puzzle-piece {
-      width: 100px;  /* Changed to 100px */
-      height: 100px; /* Changed to 100px */
-      background-color: white;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
-      cursor: pointer;
-      position: absolute;
-      background-size: 300px 300px;
-      transition: all 0.2s ease;
-  }
+.puzzle-piece {
+    width: 100px;  /* Changed to 100px */
+    height: 100px; /* Changed to 100px */
+    background-color: white;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    cursor: pointer;
+    position: absolute;
+    background-size: 300px 300px;
+    transition: all 0.2s ease;
+}
 
-  .puzzle-piece:hover {
-      transform: scale(1.05);
-      z-index: 1;
-  }
+.puzzle-piece:hover {
+    transform: scale(1.05);
+    z-index: 1;
+}
 
-  .hidden {
-      opacity: 0;
-      pointer-events: none;
-  }
+.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
 
-  #shuffle-button {
-      font-size: medium;
-      font-family: Georgia, 'Times New Roman', Times, serif;
-      font-weight: bold;
-      padding: 10px;
-      border-radius: 25%;
-      background-color: #002fff;
-      color: white;
-      cursor: pointer;
-      margin-bottom: 10px;
-  }
+#shuffle-button {
+    font-size: medium;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-weight: bold;
+    padding: 10px;
+    border-radius: 25%;
+    background-color: #23063b;
+    color: white;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
 
-  #message {
-      margin-top: 20px;
-      font-weight: bolder;
-      font-size: 1.5em;
-      color: rgb(255, 255, 255);
-      text-align: center;
-  }
+#message {
+    margin-top: 20px;
+    font-weight: bolder;
+    font-size: 1.5em;
+    color: rgb(255, 255, 255);
+    text-align: center;
+}
 
 
-  #author {
-      display: inline;
-      margin-top: 20px;
-      font-size: 16px;
-      color: #d40000;
-      text-align: center;
-      font-weight: bolder;
-  }
+#author {
+    display: inline;
+    margin-top: 20px;
+    font-size: 16px;
+    color: #d40000;
+    text-align: center;
+    font-weight: bolder;
+}
 
-  #author p {
-      margin: 5px 0;
-      background-color: #ffffff;
-      border-radius: 25%;
-      padding: 1px;
-      margin: auto;
-  }
+#author p {
+    margin: 5px 0;
+    background-color: #ffffff;
+    border-radius: 25%;
+    padding: 1px;
+    margin: auto;
+}
 
-  #author a {
-      color: blue;
-      text-decoration: underline;
-  }
+#author a {
+    color: blue;
+    text-decoration: underline;
+}
 
 
 
@@ -595,7 +590,7 @@ const char script_js[] PROGMEM = R"rawliteral(const qrText = 'https://www.youtub
           }
       });
 
-      document.getElementById('message').innerText = solved ? 'Puzzle Solved!' : '!Solve It!';
+      document.getElementById('message').innerText = solved ? 'Puzzle Solved!' : 'Solve It!';
       
       if (solved) {
           showCompleteImage(); // Add this line to show the complete image
@@ -636,9 +631,17 @@ const char script_js[] PROGMEM = R"rawliteral(const qrText = 'https://www.youtub
           }
       }
       
-      document.getElementById('message').innerText = '!Solve It!';
+      document.getElementById('message').innerText = 'Solve It!';
   }
 
+document.addEventListener('click', function (event) {
+    const puzzleContainer = document.getElementById('puzzle-container');
+    const shuffleButton = document.getElementById('shuffle-button');
+
+    if (!puzzleContainer.contains(event.target)) {
+        shufflePuzzle();
+    }
+});
 
 
 
