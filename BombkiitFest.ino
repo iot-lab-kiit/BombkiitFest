@@ -10,8 +10,8 @@
 #include <math.h>
 
 // WiFi & MQTT Setup
-const char *ssid = "real";
-const char *password = "suman saha";
+const char *ssid = "IOT_DEVICES";
+const char *password = "iot_lab_devices";
 
 
 ////////////////////////////////////////////////////
@@ -585,7 +585,7 @@ void Task8(void *pvParameters) {
     if (currentMillis - previousMillis >= interval) {
       previousMillis = currentMillis;
 
-      if (analogRead(WIRE_PIN) == 512) {
+      if (digitalRead(WIRE_PIN) == 512) {
         levelCompleted = true;
         levelDisplay.updateLevel(8);
         digitalWrite(LED_STAT, LOW);
