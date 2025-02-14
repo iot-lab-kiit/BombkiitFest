@@ -15,7 +15,7 @@ const char *password = "iot_lab_devices";
 
 
 ////////////////////////////////////////////////////
-const char *mqttServer = "192.168.0.22";
+const char *mqttServer = "tcp://broker.mqtt.cool";
 const int mqttPort = 1883;
 const char *mqttUser = "guest";
 const char *mqttPassword = "guest";
@@ -58,7 +58,7 @@ int thresholdDistance = 6;
 
 #define REED_PIN 23  // Reed switch connected to gnd
 
-#define NTC_PIN 26  // NTC thermistor
+#define NTC_PIN 14  // NTC thermistor
 
 #define BUTTON_PIN 4  // level 7 bypass for us
 
@@ -83,8 +83,8 @@ unsigned long lastSecondUpdate = 0;
 extern int remainingSeconds = 600;
 bool gameOver = false;
 
-unsigned int distance = 0;
-volatile int heat = 1400;
+unsigned volatile int distance = 0;
+unsigned volatile int heat = 0;
 
 void sendMQTTMessage(int bombno, int levelNumber, int remainingTime);
 
@@ -119,6 +119,7 @@ public:
     lcd.print(currentLevel);
     lcd.setCursor(11, 0);
     displayTimer();
+   
   }
 
   void updateBlinkingDot() {
@@ -127,17 +128,15 @@ public:
       dotBlinkState = !dotBlinkState;
       lastBlinkTime = currentTime;
       displayDots();
-
-      if (currentLevel == 2) {
+ if (currentLevel == 2) {
         lcd.setCursor(0, 1);
         lcd.print(String(distance).substring(0,1));
         lcd.setCursor(3, 1);
         lcd.print("cm");
       }
-    
 
-     else if (currentLevel == 6) {
-      if(heat>1200){
+       if (currentLevel == 6) {
+       if(heat!= 1){
         lcd.setCursor(0, 1);
         lcd.print("COLD");
       }
@@ -146,8 +145,9 @@ public:
          lcd.print("HEAT");
       }
       }
-    }
+      }
   }
+
 
   void displayTimer() {
     int minutes = remainingSeconds / 60;
@@ -173,8 +173,8 @@ public:
         currentLevel = levelNumber + 1;
 
         if (currentLevel > 8) {
-          gameOver = true;
-          displayGameResult();
+          //gameOver = true;
+          //displayGameResult(0);
           return;
         }
       }
@@ -198,6 +198,8 @@ public:
       }
     }
   }
+
+  
   }
   void updateTimer() {
     unsigned long currentTime = millis();
@@ -209,25 +211,24 @@ public:
 
       if (remainingSeconds <= 0) {
         gameOver = true;
-        displayGameResult();
+        displayGameResult(0);
       }
     }
   }
 
-  void displayGameResult() {
+  void displayGameResult(int a) {
+    remainingSeconds=0;
     lcd.clear();
     lcd.setCursor(0, 0);
-    if (completedLevels == 8) {
-      lcd.print("CONGO!");
-      lcd.setCursor(0, 1);
-      lcd.print("YOU WON!");
+    if (a==1) {
+      lcd.print("Diffused");
       digitalWrite(LED_WIN, HIGH);
-    } else {
+    } if(a==0) {
       tone(BUZZ, 900);
       lcd.print("GAME OVER!");
       lcd.setCursor(0, 1);
       lcd.print("last Level:");
-      lcd.print(completedLevels);
+      lcd.print(currentLevel-1);
       digitalWrite(LED_STAT, HIGH);  
         }
   }
@@ -248,7 +249,7 @@ void setup() {
   pinMode(LED_STAT, OUTPUT);
   digitalWrite(LED_WIN, LOW);
   digitalWrite(LED_STAT, HIGH);
-
+ pinMode(NTC_PIN, INPUT);
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -288,13 +289,12 @@ void setup() {
 void loop() {
   levelDisplay.updateTimer();
   levelDisplay.updateBlinkingDot();
-
   if (levelDisplay.isGameOver()) {
-    Serial.println("Game Over!");
+    //Serial.println("Game Over!");
     // delay(2000);
     // ESP.restart();
 
-    delay(100);
+   // delay(100);
   }
 }
 
@@ -480,9 +480,9 @@ void Task4(void *pvParameters) {
   bool levelCompleted = false;
 
   while (remainingSeconds > 0 && !levelCompleted) {
-    int val =analogRead(TILT_PIN);
+    int val =digitalRead(TILT_PIN);
     Serial.println(val);
-    if (val =! 0) {
+    if (val != 0) {
       levelCompleted = true;
       levelDisplay.updateLevel(4);
       sendMQTTMessage(1, (int)4, remainingSeconds);
@@ -521,14 +521,14 @@ void Task5(void *pvParameters) {
 void Task6(void *pvParameters) {
   Serial.println("Entered task 6");
   beep(6);
-  pinMode(NTC_PIN, INPUT);
+   pinMode(NTC_PIN, INPUT_PULLUP);
+
   bool levelCompleted = false;
 
   while (remainingSeconds > 0 && !levelCompleted) {
-     heat = analogRead(NTC_PIN);
-    Serial.print("Current value: ");
+      heat =digitalRead(NTC_PIN);
     Serial.println(heat);
-     if (heat < 1200) {
+    if (heat != 0) {
       
       Serial.println("Heat detected!");
       levelCompleted = true;
@@ -574,28 +574,24 @@ void Task7(void *pvParameters) {
 void Task8(void *pvParameters) {
   Serial.println("Entered task 8");
   beep(8);
-  pinMode(WIRE_PIN, INPUT_PULLUP);
+  pinMode(WIRE_PIN, INPUT);
+      vTaskDelay(1000 / portTICK_PERIOD_MS);
+int val = 1;
   bool levelCompleted = false;
-  unsigned long previousMillis = 0;
-  const unsigned long interval = 100;
-
-  while (remainingSeconds > 0 && !levelCompleted) {
-    unsigned long currentMillis = millis();
-
-    if (currentMillis - previousMillis >= interval) {
-      previousMillis = currentMillis;
-
-      if (digitalRead(WIRE_PIN) == 512) {
+  
+    while (remainingSeconds > 0 && !levelCompleted) {
+      val =digitalRead(WIRE_PIN);
+      Serial.println(val);
+      if (val== 0) {
         levelCompleted = true;
         levelDisplay.updateLevel(8);
         digitalWrite(LED_STAT, LOW);
         digitalWrite(LED_WIN, HIGH);
         sendMQTTMessage(1, 8, remainingSeconds);
-        levelDisplay.displayGameResult();
-      }
-    }
+        levelDisplay.displayGameResult(1);
+         }
+    vTaskDelay(100 / portTICK_PERIOD_MS);
   }
-  vTaskDelay(100 / portTICK_PERIOD_MS);
 
   vTaskDelete(NULL);
 }
