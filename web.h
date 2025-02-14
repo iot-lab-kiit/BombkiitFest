@@ -35,7 +35,7 @@ const char styles_css[] PROGMEM = R"rawliteral(body {
     align-items: center;
     height: 100vh;
     margin: 0;
-    background: rgb(0, 0, 0) url(https://res.cloudinary.com/dos2waok4/image/upload/v1738064555/Artwork_without_Logo_jq8ya8_qwzhna.avif) center / cover no-repeat;
+    background: rgb(0, 0, 0) url(https://i.postimg.cc/4syZNF6X/hero.avif) center / cover no-repeat;
     
 }
 
