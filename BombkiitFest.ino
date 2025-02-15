@@ -284,8 +284,8 @@ void setup() {
   client.subscribe(MQTT_TOPIC);
   Serial.print("Subscribed to topic: ");
   Serial.println(MQTT_TOPIC);
-  //xTaskCreatePinnedToCore(Task0, "MQTTLOOP", 10000, NULL, 1, &Task0Handle, 0);
 
+sendMQTTMessage(1, 0, remainingSeconds);// send the start time to the server 
 
   xTaskCreatePinnedToCore(Task1, "Level 1", 10000, NULL, 1, &Task1Handle, 0);
 }
