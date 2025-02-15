@@ -82,7 +82,7 @@ TaskHandle_t Task8Handle = NULL;
 
 unsigned long lastBlinkTime = 0;
 unsigned long lastSecondUpdate = 0;
-extern int remainingSeconds = 20;
+extern int remainingSeconds = 600;
 bool gameOver = false;
 
 unsigned volatile int distance = 0;
@@ -577,7 +577,7 @@ void Task7(void *pvParameters) {
 void Task8(void *pvParameters) {
   Serial.println("Entered task 8");
   beep(8);
-  pinMode(WIRE_PIN, INPUT);
+  pinMode(WIRE_PIN, INPUT_PULLUP);
   vTaskDelay(1000 / portTICK_PERIOD_MS);
   int val = 1;
   bool levelCompleted = false;
