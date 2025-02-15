@@ -82,7 +82,7 @@ TaskHandle_t Task8Handle = NULL;
 
 unsigned long lastBlinkTime = 0;
 unsigned long lastSecondUpdate = 0;
-extern int remainingSeconds = 600;
+extern int remainingSeconds = 20;
 bool gameOver = false;
 
 unsigned volatile int distance = 0;
@@ -162,6 +162,9 @@ public:
     if (seconds < 10)
       lcd.print("0");
     lcd.print(seconds);
+    if (remainingSeconds < 6 && remainingSeconds > -1) {
+      tone(BUZZ, ((500)+((6-remainingSeconds)*100)));
+    }
   }
 
   uint8_t levelCompletion[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -225,10 +228,12 @@ public:
       digitalWrite(LED_WIN, HIGH);
     }
     if (a == 0) {
+
       tone(BUZZ, 900);
+
       lcd.print("GAME OVER!");
       lcd.setCursor(0, 1);
-      lcd.print("last Level:");
+      lcd.print("last completed:");
       lcd.print(currentLevel - 1);
       digitalWrite(LED_STAT, HIGH);
     }
@@ -289,13 +294,8 @@ void loop() {
   client.loop();
   levelDisplay.updateTimer();
   levelDisplay.updateBlinkingDot();
-  if (levelDisplay.isGameOver()) {
-    Serial.println("Game Over!");
-    delay(2000);
-    ESP.restart();
-    delay(100);
-  }
-  delay(10);
+
+  //delay(10);
 }
 
 // void reconnectMQTT() {
@@ -370,12 +370,12 @@ void sendMQTTMessage(int bombno, int levelNumber, int remainingTime) {
 }
 
 ////////////////////////////////////////////
-void Task0(void *pvParameters) {
-  while (1) {
-    client.loop();
-    vTaskDelay(1 / portTICK_PERIOD_MS);
-  }
-}
+// void Task0(void *pvParameters) {
+//   while (1) {
+//     client.loop();
+//     vTaskDelay(1 / portTICK_PERIOD_MS);
+//   }
+// }
 void Task1(void *pvParameters) {
   Serial.println("Entered task 1");
   beep(1);
